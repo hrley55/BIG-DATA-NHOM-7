@@ -71,9 +71,9 @@ with st.sidebar:
     with st.expander("📁 Danh mục Dữ liệu (CSV)"):
         st.markdown("""
         Hệ thống cần nhập các file dữ liệu sau:
-        - 📄 `data.csv` 
-        - 📄 `data_segmented.csv`
-        - 📄 `rfm_clustered.csv`
+        - 📄 v` 
+        - 📄 `data/data_segmentev`
+        - 📄 `data/rfm_clustered.csv`
         """)
         
     st.caption("Developed by Group 07 @ 2026")
@@ -82,11 +82,11 @@ with st.sidebar:
 @st.cache_data
 def load_data():
     # File cho biểu đồ thời gian và bang
-    df_dash = pd.read_csv('olist_dashboard_final.csv')
+    df_dash = pd.read_csv('data/olist_dashboard_final.csv')
     df_dash['month_year'] = df_dash['month_year'].astype(str)
     
     # File cho phân cụm (Clustering) - File bạn vừa gửi
-    df_rfm = pd.read_csv('rfm_clustered.csv')
+    df_rfm = pd.read_csv('data/rfm_clustered.csv')
     
     return df_dash, df_rfm
     
@@ -96,17 +96,17 @@ def load_recommender_assets():
     try:
         from surprise import dump
         # Tải mô hình SVD
-        _, model = dump.load('svd_model.pkl')
+        _, model = dump.load('models/svd_model.pkl')
         
         # Tải danh sách sản phẩm (Giữ nguyên dạng DataFrame để lát nữa lấy Tên)
-        p_df = pd.read_csv('product_list.csv')
+        p_df = pd.read_csv('data/product_list')
         return model, p_df
     except Exception as e:
         return None, None
     
 @st.cache_resource
 def load_trained_model():
-    model_path = 'trained_model.joblib'
+    model_path = 'models/trained_model'
     if os.path.exists(model_path): 
         return joblib.load(model_path)
     return None
@@ -213,7 +213,7 @@ if selected == "Dashboard":
         top_1_name = df_state.iloc[0]['State Name']
         st.info(f"**Nhận xét:** Bang **{top_1_name}** dẫn đầu vượt trội về doanh thu. Đây là thị trường trọng điểm cần tập trung các chiến dịch khuyến mãi và tối ưu kho vận.")
    
-    # --- PHẦN MỚI: THÊM 4 HÌNH ẢNH BIỂU ĐỒ PHÂN BỐ ---
+    # --- PHẦN MỚI: THÊM 4 HÌNH ẢNH BIỂU ĐỒ  ---
     st.markdown("---")
     st.subheader("📊 Phân bố review_score")
 
@@ -223,15 +223,15 @@ if selected == "Dashboard":
 
     with row1_col1:
         st.write("**Phân bố giá sản phẩm (< 500 BRL)**")
-        st.image("Phân bố giá sản phẩm (nhỏ hơn 500 BRL).png", use_container_width=True)
+        st.image("product_distribution.png", use_container_width=True)
 
     with row1_col2:
         st.write("**Phân bố trạng thái đơn hàng**")
-        st.image("Phân bố trạng thái đơn hàng.png", use_container_width=True)
+        st.image("order_status.png", use_container_width=True)
 
     with row2_col1:
         st.write("**Phân bố Review Score**")
-        st.image("Phân bố Review Score (đánh giá của khách hàng).png", use_container_width=True)
+        st.image("review_score.png", use_container_width=True)
 
     with row2_col2:
         st.write("**Phân bố giá trị thanh toán (< 1000 BRL)**")
@@ -294,7 +294,7 @@ elif selected == "Phân khúc":
     @st.cache_resource
     def load_kmeans_pipeline():
         try:
-            return joblib.load('kmeans_pipeline.joblib')
+            return joblib.load('models/kmeans_pipeline.joblib')
         except:
             return None
 
@@ -409,7 +409,7 @@ elif selected == "Phân khúc":
         st.subheader("🎯 Dự đoán phân cụm cho dữ liệu mới")
         
         if kmeans_pipeline is None:
-            st.error("⚠️ Không tìm thấy file `kmeans_pipeline.joblib`.")
+            st.error("⚠️ Không tìm thấy file `models/kmeans_pipeline.joblib`.")
         else:
             col_upload, col_req = st.columns([1.2, 1])
             with col_upload:
@@ -466,7 +466,7 @@ elif selected == "Phân khúc":
                         # Nút tải xuống
                         csv = new_df.to_csv(index=False).encode('utf-8')
                         st.download_button("📥 Tải file kết quả (.csv)", data=csv, 
-                                         file_name="predicted_segments.csv", mime="text/csv")
+                                         file_name="data/predicted_segments.csv", mime="text/csv")
                 else:
                     st.error("⚠️ File thiếu các cột cần thiết (Recency, Frequency, Monetary).")
 
@@ -577,7 +577,7 @@ elif selected == "Khuyến nghị":
                     final_df = final_df[['Mã Sản phẩm', 'Tên Sản phẩm', 'Đánh giá dự kiến']]
                 
                 except KeyError:
-                    st.warning("Không tìm thấy cột 'product_category_name' trong file product_list.csv.")
+                    st.warning("Không tìm thấy cột 'product_category_name' trong file data/product_list.")
                     res_df['Đánh giá dự kiến'] = res_df['Điểm dự báo'].apply(format_score)
                     final_df = res_df[['product_id', 'Đánh giá dự kiến']].rename(columns={'product_id': 'Mã Sản phẩm'})
 
@@ -589,7 +589,7 @@ elif selected == "Khuyến nghị":
                 st.toast("✅ Đã hoàn tất tính toán gợi ý!", icon="🎉")
                 
     else:
-        st.error("⚠️ Không thể tải mô hình. Vui lòng kiểm tra xem file 'svd_model.pkl' và 'product_list.csv' đã được copy vào cùng thư mục với app.py chưa.")
+        st.error("⚠️ Không thể tải mô hình. Vui lòng kiểm tra xem file 'models/svd_model.pkl' và 'data/product_list.csv' đã được copy vào cùng thư mục với app.py chưa.")
 
     with st.expander("📝 Giải thích cơ chế"):
         st.write("Hệ thống phân tích các yếu tố ẩn từ lịch sử đánh giá để đưa ra gợi ý cá nhân hóa dựa trên từng khách hàng.")
@@ -622,7 +622,7 @@ elif selected == "Xu hướng":
         # --- LOAD DATA BẰNG JOBLIB ---
         import joblib
         # Đổi tên file thành file joblib bạn đang có
-        rules_df = joblib.load('association_rules.joblib')
+        rules_df = joblib.load('models/association_rules.joblib')
         
         # CHUẨN HÓA DỮ LIỆU TỪ JOBLIB (Xử lý tên cột và frozenset)
         # 1. Đổi tên cột từ tiếng Anh (nếu có) sang tiếng Việt để khớp với UI của bạn
@@ -725,7 +725,7 @@ elif selected == "Xu hướng":
             st.warning("Với mức lọc hiện tại, không có quy luật nào thỏa mãn. Hãy thử kéo thanh trượt giảm chỉ số xuống nhé!")
 
     except FileNotFoundError:
-        st.error("⚠️ Không tìm thấy file 'association_rules.joblib'. Vui lòng kiểm tra lại tên file và đảm bảo nó nằm cùng thư mục với app.")
+        st.error("⚠️ Không tìm thấy file 'models/association_rules.joblib'. Vui lòng kiểm tra lại tên file và đảm bảo nó nằm cùng thư mục với app.")
         
 elif selected == "Dự đoán":
     # Tiêu đề to, đồng bộ với các trang khác
@@ -733,7 +733,7 @@ elif selected == "Dự đoán":
     st.markdown("---")
     st.write("Nhập thông tin đơn hàng bên dưới để AI dự báo khách hàng sẽ đánh giá bao nhiêu sao.")
 
-    MODEL_PATH = "rf_model.joblib"
+    MODEL_PATH = "models/rf_model.joblib"
     
     if not os.path.exists(MODEL_PATH):
         st.warning("⚠️ Hệ thống AI chưa được huấn luyện. Vui lòng vào trang **Admin** để huấn luyện mô hình trước!")
@@ -843,7 +843,7 @@ elif selected == "Admin":
                             model = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
                             model.fit(X_train, y_train)
 
-                            joblib.dump(model, "rf_model.joblib")
+                            joblib.dump(model, "models/rf_model.joblib")
                             
                             y_pred = model.predict(X_test)
                             acc = accuracy_score(y_test, y_pred)
